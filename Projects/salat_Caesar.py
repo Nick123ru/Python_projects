@@ -1,49 +1,58 @@
-'''Программа написана в рамках изучения курса "Поколение Python": курс для начинающих'''
+from string import ascii_lowercase, ascii_uppercase, digits, punctuation
 
-def caesar(lng, txt, n):
-    for symbol in txt:
-            if not symbol.isalpha():
-                print(symbol, end = '')
-            elif symbol.isupper():
-                s = lng.upper().index(symbol) + n
-                if s >= 0:
-                    if s > len(lng) - 1:
-                        print(lng[s - len(lng)].upper(), end= '')
-                    else:
-                        print(lng[s].upper(), end = '')
-                else:
-                    print(lng[s + len(lng)].upper(), end = '')
-            elif symbol.islower():
-                s = lng.index(symbol) + n
-                if s >= 0:
-                    if s > len(lng) - 1:
-                        print(lng[s - len(lng)], end= '')
-                    else:
-                        print(lng[s], end= '')
-                else:
-                    print(lng[s + len(lng)], end= '')
-                
-language, text, n = int(input('Язык (0 - ru; 1 - en): ')), input('Введите текст: '), input('Для шифрования: n > 0 или len; Для дешифрования: если известен сдвиг n < 0, если нет - n\nСдвиг: ')
+info = ('Для шифрования текста введите число (n > 0) или "len" для шифрования на длину слова.\n'
+        'Для дешифрования: если известен сдвиг введите число (n < 0) или "-len", если нет - "n"\n'
+        'Важно: если укажите число больше длины алфавита - вернется исходный текст')
 
-if language == 0:
-    language = 'абвгдежзийклмнопрстуфхцчшщъыьэюя'
-elif language == 1:
-    language = 'abcdefghijklmnopqrstuvwxyz'
 
-if n.isdigit():
-    n = int(n)
-    caesar(language, text, n)
-elif n == 'n':
-    for i in range(len(language) - 1):
-        n = i + 1
-        caesar(language, text, -n)
-        print()
-elif n == 'len':
-     words = text.split()
-     for word in words:
-        len_word = word
-        if not len_word.isalpha():
-            for i in '.,!"':
-                len_word = len_word.replace(i, '')
-        caesar(language, word, len(len_word))
-        print(end = ' ')
+def caesar(text: str, step: int) -> str:  # (Де)Шифратор
+    rus = 'абвгдежзийклмнопрстуфхцчшщъыьэюя'
+    alphabets = (ascii_lowercase, ascii_uppercase, rus, rus.upper())
+
+    def shift(alphabet: str) -> str:  # Создание алфавита для сдвига
+        return alphabet[step:] + alphabet[:step]
+
+    shifted_alphabets = tuple(map(shift, alphabets))
+    joined_aphabets = ''.join(alphabets)
+    joined_shifted_alphabets = ''.join(shifted_alphabets)
+    table = str.maketrans(joined_aphabets, joined_shifted_alphabets)
+    return text.translate(table)
+
+
+def encrypting(text: str, mode: str) -> None:
+    match mode:  # данная функция проверяет какой режим выбрал пользователь и сама вызывает необходимые функции
+        case 'n':
+            if all(map(lambda x: x.strip(punctuation + digits).lower()[0] in ascii_lowercase, text.split())):
+                [print(caesar(text, i)) for i in range(1, 26)]
+            else:
+                [print(caesar(text, i)) for i in range(1, 32)]
+        case 'len' | '-len':
+
+            def word_len(word: str) -> str:
+                return str(len(word.strip(punctuation + digits)))
+
+            print(*map(lambda x: caesar(x, int(mode.strip('len') + word_len(x))), text.split()))
+            # for word in text.split():  # не определился как мне больше нравится
+            #    print(caesar(word, int(mode.strip('len') + word_len(word))), end=' ')
+        case _:
+            print(caesar(text, int(mode)))
+
+
+def main(text: str = None) -> None:
+    # text = 'a аа aaa'
+    if not text:
+        text = str(input('Введите текст: '))
+        print(info)
+    mode = input('Что будем делать с текстом: ')
+    try:
+        if mode in ('len', '-len', 'n') or isinstance(int(mode), int):
+            encrypting(text, mode)
+        else:
+            main(text)
+    except ValueError as e:
+        print(e)
+        main(text)
+
+
+if __name__ == '__main__':
+    main()
